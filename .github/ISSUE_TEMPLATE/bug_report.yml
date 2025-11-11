@@ -1,0 +1,105 @@
+name: Bug Report
+description: Report a bug or issue with the code-executor skill
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which component is affected?
+      options:
+        - MCP Client Library (TypeScript)
+        - MCP Client Library (Python)
+        - Cached Scripts (TypeScript)
+        - Cached Scripts (Python)
+        - Templates
+        - Documentation
+        - Subagent Architecture
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear description of the bug
+      placeholder: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Configure MCP server...
+        2. Execute script...
+        3. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Your environment details
+      value: |
+        - OS:
+        - Deno version:
+        - Python version:
+        - Claude Code version:
+        - MCP servers configured:
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: MCP Configuration
+      description: Your subagent MCP configuration (sanitize tokens/passwords)
+      render: json
+      placeholder: |
+        {
+          "mcpServers": {
+            "filesystem": {
+              "command": "npx",
+              "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+            }
+          }
+        }
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant error messages or logs
+      render: shell
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I have checked that MCP_CONFIG_PATH is set in execution commands
+          required: false
+        - label: I have verified the MCP server is running and accessible
+          required: false
+        - label: I have reviewed the troubleshooting guide in README.md
+          required: false
+        - label: I have checked existing issues for duplicates
+          required: false
