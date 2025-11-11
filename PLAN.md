@@ -79,6 +79,37 @@ The code-executor-MCP server will remain unchanged. The Skill teaches Claude Cod
 | Connection pooling | Context about concurrent execution limits |
 | Audit logging | Awareness of execution tracking |
 
+### Cached Scripts Approach
+
+**Key Innovation:** Instead of just documenting patterns in markdown, the skill includes **executable script files** that Claude Code can reference, copy, or adapt. This provides:
+
+**Benefits:**
+- **Reduced token usage**: Reference file paths instead of inline code
+- **Proven patterns**: Pre-tested, working code examples
+- **Quick adaptation**: Copy and modify existing scripts
+- **Library of solutions**: Build a growing collection of common patterns
+- **Type safety**: Actual .ts/.py files with proper syntax
+- **Reusability**: Same script can be adapted for multiple use cases
+
+**How Claude Code Uses Cached Scripts:**
+
+1. **Reference**: Point users to relevant script files for similar tasks
+2. **Copy**: Duplicate a script as starting point for new tasks
+3. **Adapt**: Read script, understand pattern, modify for specific needs
+4. **Compose**: Combine patterns from multiple scripts
+5. **Learn**: Study well-structured examples to improve generated code
+
+**Script Categories:**
+
+- **Templates** (`templates/`): Minimal starting points with TODOs
+- **Patterns** (`scripts/`): Complete, working examples of common workflows
+- **Each script**: Includes header comments explaining use case and how to adapt
+
+**Naming Convention:**
+- Descriptive, kebab-case for TypeScript: `multi-tool-workflow.ts`
+- Snake_case for Python: `multi_tool_workflow.py`
+- Template suffix: `.template.ts`, `.template.py`
+
 ### Proposed Skill Structure
 
 ```
@@ -87,7 +118,27 @@ code-executor/
 ├── TYPESCRIPT_GUIDE.md    # Deep dive on TS execution
 ├── PYTHON_GUIDE.md        # Deep dive on Python execution
 ├── EXAMPLES.md            # Common use cases and recipes
-└── REFERENCE.md           # API reference for callMCPTool
+├── REFERENCE.md           # API reference for callMCPTool
+├── scripts/               # Cached executable scripts
+│   ├── typescript/
+│   │   ├── multi-tool-workflow.ts
+│   │   ├── file-processing.ts
+│   │   ├── parallel-execution.ts
+│   │   ├── error-recovery.ts
+│   │   ├── conditional-logic.ts
+│   │   └── data-aggregation.ts
+│   └── python/
+│       ├── multi_tool_workflow.py
+│       ├── file_processing.py
+│       ├── parallel_execution.py
+│       ├── error_recovery.py
+│       ├── conditional_logic.py
+│       └── data_aggregation.py
+└── templates/
+    ├── basic-typescript.template.ts
+    ├── basic-python.template.py
+    ├── multi-tool.template.ts
+    └── multi-tool.template.py
 ```
 
 ## Detailed Design
@@ -109,6 +160,7 @@ allowed-tools: [executeTypescript, executePython]
    - What is code execution for MCP tools
    - Benefits: composition, progressive disclosure, token efficiency
    - When to use vs. direct tool calls
+   - Cached scripts library: Reference `scripts/` directory for proven patterns
 
 2. **When to Use Code Execution**
    - ✅ Composing multiple MCP operations
@@ -152,7 +204,20 @@ allowed-tools: [executeTypescript, executePython]
    - Error handling and recovery
    - Parallel execution
 
-6. **Tool Naming Convention**
+6. **Using Cached Scripts**
+   - **Templates**: Start with `templates/basic-*.template.ts` for new patterns
+   - **Scripts**: Reference `scripts/typescript/` or `scripts/python/` for proven solutions
+   - **Adaptation**: Read script → Understand pattern → Copy and modify for task
+   - **Learning**: Study headers and comments to improve code generation
+   - **Examples available**:
+     - `multi-tool-workflow`: Sequential operations with data flow
+     - `file-processing`: File system operations patterns
+     - `parallel-execution`: Concurrent tool calls with Promise.all/asyncio.gather
+     - `error-recovery`: Retry logic and fallback strategies
+     - `conditional-logic`: Dynamic tool selection
+     - `data-aggregation`: Combining results from multiple sources
+
+7. **Tool Naming Convention**
    - Format: `mcp__<server-name>__<tool-name>`
    - Discovery: list available tools via MCP introspection
    - Examples: `mcp__filesystem__readFile`, `mcp__database__query`
@@ -226,6 +291,111 @@ Concrete, copy-paste examples:
 - Execution limits and quotas
 - Debugging techniques
 
+### Cached Scripts Content
+
+#### Templates
+
+**`templates/basic-typescript.template.ts`**
+- Minimal TypeScript structure with TODOs
+- Single tool call example
+- Error handling skeleton
+- Comments explaining each section
+
+**`templates/basic-python.template.py`**
+- Minimal Python structure with TODOs
+- Single tool call example
+- Error handling skeleton
+- Comments explaining each section
+
+**`templates/multi-tool.template.ts`** & **`.py`**
+- Structure for calling multiple tools
+- Result aggregation pattern
+- Error handling for multiple operations
+
+#### TypeScript Scripts
+
+**`scripts/typescript/multi-tool-workflow.ts`**
+- Complete example: List files → Read contents → Process → Write results
+- Demonstrates sequential tool calls with data flow
+- Proper error handling and logging
+
+**`scripts/typescript/file-processing.ts`**
+- File system operations workflow
+- Read directory → Filter files → Process each → Aggregate results
+- Uses `mcp__filesystem__*` tools
+
+**`scripts/typescript/parallel-execution.ts`**
+- Execute multiple tool calls concurrently using `Promise.all()`
+- Handle partial failures gracefully
+- Aggregate results from parallel operations
+
+**`scripts/typescript/error-recovery.ts`**
+- Try primary tool → Catch error → Fallback to alternative
+- Demonstrate retry logic with exponential backoff
+- Logging and error reporting patterns
+
+**`scripts/typescript/conditional-logic.ts`**
+- Check conditions → Call appropriate tools
+- Switch between different MCP tools based on data
+- Handle different result types
+
+**`scripts/typescript/data-aggregation.ts`**
+- Call multiple data sources
+- Combine and transform results
+- Format output for consumption
+
+#### Python Scripts
+
+**`scripts/python/multi_tool_workflow.py`**
+- Complete example: Fetch data → Transform → Store
+- Async/await patterns in Python
+- Proper error handling
+
+**`scripts/python/file_processing.py`**
+- File system operations in Python
+- List → Filter → Process → Aggregate
+- Uses `mcp__filesystem__*` tools
+
+**`scripts/python/parallel_execution.py`**
+- Concurrent execution using `asyncio.gather()`
+- Handle partial failures
+- Aggregate results
+
+**`scripts/python/error_recovery.py`**
+- Try/except patterns for MCP tools
+- Retry logic implementation
+- Fallback strategies
+
+**`scripts/python/conditional_logic.py`**
+- Conditional tool selection
+- Different handling for different results
+- Type checking and validation
+
+**`scripts/python/data_aggregation.py`**
+- Multi-source data fetching
+- Data transformation pipelines
+- Result formatting
+
+#### Script Header Format
+
+Each script should include:
+```typescript
+/**
+ * Script: [Name]
+ * Purpose: [What this script does]
+ * Use Case: [When to use this pattern]
+ * MCP Tools Used: [List of tools demonstrated]
+ *
+ * How to Adapt:
+ * 1. [Step to customize]
+ * 2. [Step to customize]
+ * 3. [Step to customize]
+ *
+ * Example Usage:
+ * [Description of how this would be called]
+ */
+```
+
 ## Key Differences from MCP Server
 
 | Aspect | MCP Server | Claude Code Skill |
@@ -238,18 +408,54 @@ Concrete, copy-paste examples:
 
 ## Implementation Checklist
 
+### Core Documentation
 - [ ] Create `.claude/skills/code-executor/` directory
 - [ ] Write `SKILL.md` with frontmatter and main instructions
 - [ ] Create `TYPESCRIPT_GUIDE.md` with detailed TS patterns
 - [ ] Create `PYTHON_GUIDE.md` with detailed Python patterns
 - [ ] Create `EXAMPLES.md` with 6+ real-world examples
 - [ ] Create `REFERENCE.md` with API documentation
+
+### Templates
+- [ ] Create `templates/` directory
+- [ ] Write `templates/basic-typescript.template.ts`
+- [ ] Write `templates/basic-python.template.py`
+- [ ] Write `templates/multi-tool.template.ts`
+- [ ] Write `templates/multi-tool.template.py`
+
+### TypeScript Cached Scripts
+- [ ] Create `scripts/typescript/` directory
+- [ ] Write `scripts/typescript/multi-tool-workflow.ts`
+- [ ] Write `scripts/typescript/file-processing.ts`
+- [ ] Write `scripts/typescript/parallel-execution.ts`
+- [ ] Write `scripts/typescript/error-recovery.ts`
+- [ ] Write `scripts/typescript/conditional-logic.ts`
+- [ ] Write `scripts/typescript/data-aggregation.ts`
+
+### Python Cached Scripts
+- [ ] Create `scripts/python/` directory
+- [ ] Write `scripts/python/multi_tool_workflow.py`
+- [ ] Write `scripts/python/file_processing.py`
+- [ ] Write `scripts/python/parallel_execution.py`
+- [ ] Write `scripts/python/error_recovery.py`
+- [ ] Write `scripts/python/conditional_logic.py`
+- [ ] Write `scripts/python/data_aggregation.py`
+
+### Testing & Validation
 - [ ] Test skill activation with various prompts
 - [ ] Validate YAML frontmatter syntax
-- [ ] Test with actual code-executor-MCP server
+- [ ] Test TypeScript scripts with code-executor-MCP server
+- [ ] Test Python scripts with code-executor-MCP server
+- [ ] Verify all scripts have proper headers
+- [ ] Check script naming conventions
+- [ ] Validate code syntax in all scripts
 - [ ] Refine description based on activation accuracy
+
+### Documentation
 - [ ] Add installation instructions to README
 - [ ] Document prerequisites and setup
+- [ ] Add script usage examples to README
+- [ ] Document how to add new cached scripts
 
 ## Prerequisites
 
@@ -278,6 +484,8 @@ The skill should enable Claude Code to:
 ✅ Compose multi-step workflows efficiently
 ✅ Reduce overall token consumption in MCP-heavy setups
 ✅ Make appropriate trade-offs between code execution vs. direct tools
+✅ Reference and adapt cached scripts for common patterns
+✅ Build on proven solutions rather than generating from scratch
 
 ## Testing Strategy
 
@@ -303,6 +511,14 @@ The skill should enable Claude Code to:
    - Conditional logic
    - Parallel execution
    - Error recovery
+
+5. **Cached Script Testing**
+   - Verify all scripts have correct syntax
+   - Test each script executes successfully
+   - Validate script headers are complete
+   - Confirm scripts demonstrate stated patterns
+   - Test script adaptation workflow
+   - Verify file references work correctly
 
 ## Limitations and Considerations
 
@@ -333,6 +549,10 @@ The skill should enable Claude Code to:
 - [ ] Integrate with CI/CD examples
 - [ ] Add tool discovery automation
 - [ ] Create interactive examples
+- [ ] Expand cached scripts library with community contributions
+- [ ] Add domain-specific script collections (web scraping, data analysis, etc.)
+- [ ] Create script testing framework
+- [ ] Add script versioning and changelog
 
 ## References
 
@@ -342,6 +562,52 @@ The skill should enable Claude Code to:
 - [MCP Protocol documentation](https://modelcontextprotocol.io)
 - [Claude Code MCP integration](https://code.claude.com/docs/en/build/mcp)
 
+## Companion Skill: Script Extractor (Future Enhancement)
+
+### Concept
+
+A complementary skill that processes Claude Code session logs to automatically extract and cache successful MCP tool calling patterns. This creates a self-improving ecosystem where the code-executor skill grows from real-world usage.
+
+### How It Works
+
+1. **Log Analysis**: Parse Claude Code session logs/history
+2. **Pattern Detection**: Identify successful `executeTypescript`/`executePython` calls
+3. **Code Extraction**: Extract the actual code that was executed
+4. **Quality Assessment**: Evaluate code quality, completeness, and reusability
+5. **Deduplication**: Check if pattern already exists in cached scripts
+6. **Formatting**: Add proper headers, comments, and adapt for reusability
+7. **Integration**: Save as new script in code-executor skill's `scripts/` directory
+8. **Documentation**: Update EXAMPLES.md with new pattern
+
+### Benefits
+
+- **Continuous Improvement**: Skill library grows from real usage
+- **Community Learning**: Best patterns emerge naturally from practice
+- **Reduced Manual Work**: Automate script curation process
+- **Quality Feedback Loop**: Successful patterns get preserved and shared
+
+### Implementation Considerations
+
+- Privacy: Only process logs user explicitly shares
+- Quality gates: Require manual review before adding scripts
+- Naming conflicts: Smart deduplication and versioning
+- Pattern categorization: Automatically classify by use case
+
+### Skill Structure
+
+```
+script-extractor/
+├── SKILL.md
+├── extraction-guide.md
+├── quality-criteria.md
+└── scripts/
+    ├── extract-from-logs.ts
+    └── format-and-integrate.ts
+```
+
+This would be developed after the main code-executor skill is stable and in use.
+
 ## Version History
 
+- **v1.1** (2025-11-11): Added cached scripts approach with templates and script library
 - **v1.0** (2025-11-11): Initial planning document
