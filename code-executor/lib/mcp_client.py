@@ -16,7 +16,6 @@ Usage:
 import asyncio
 import json
 import os
-import subprocess
 import sys
 from pathlib import Path
 from typing import Dict, Any, List, Tuple
@@ -25,6 +24,7 @@ from uuid import uuid4
 
 class MCPError(Exception):
     """MCP tool call error"""
+
     pass
 
 
@@ -41,9 +41,9 @@ def parse_mcp_tool_name(tool_name: str) -> Tuple[str, str]:
     Raises:
         ValueError: If tool name format is invalid
     """
-    parts = tool_name.split('__')
+    parts = tool_name.split("__")
 
-    if len(parts) != 3 or parts[0] != 'mcp':
+    if len(parts) != 3 or parts[0] != "mcp":
         raise ValueError(
             f"Invalid MCP tool name format: {tool_name}. "
             f"Expected: mcp__<server>__<tool>"
@@ -67,38 +67,32 @@ async def get_mcp_server_config(server_name: str) -> Dict[str, Any]:
         MCPError: If server not configured
     """
     # Try environment variable first
-    config_path = os.getenv('MCP_CONFIG_PATH')
+    config_path = os.getenv("MCP_CONFIG_PATH")
     if not config_path:
-        config_path = os.path.join(os.path.expanduser('~'), '.mcp.json')
+        config_path = os.path.join(os.path.expanduser("~"), ".mcp.json")
 
     config_path = Path(config_path)
 
     if not config_path.exists():
-        raise FileNotFoundError(
-            f"MCP config file not found: {config_path}"
-        )
+        raise FileNotFoundError(f"MCP config file not found: {config_path}")
 
     try:
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             config = json.load(f)
     except json.JSONDecodeError as e:
         raise MCPError(f"Invalid JSON in MCP config: {e}")
 
-    if 'mcpServers' not in config:
+    if "mcpServers" not in config:
         raise MCPError(f"No 'mcpServers' key in config: {config_path}")
 
-    if server_name not in config['mcpServers']:
-        raise MCPError(
-            f"MCP server '{server_name}' not found in config: {config_path}"
-        )
+    if server_name not in config["mcpServers"]:
+        raise MCPError(f"MCP server '{server_name}' not found in config: {config_path}")
 
-    return config['mcpServers'][server_name]
+    return config["mcpServers"][server_name]
 
 
 async def call_mcp_tool_via_stdio(
-    server_config: Dict[str, Any],
-    tool_name: str,
-    parameters: Dict[str, Any]
+    server_config: Dict[str, Any], tool_name: str, parameters: Dict[str, Any]
 ) -> Any:
     """
     Call an MCP tool via stdio protocol.
@@ -114,21 +108,18 @@ async def call_mcp_tool_via_stdio(
     Raises:
         MCPError: If tool call fails
     """
-    command = server_config['command']
-    args = server_config.get('args', [])
+    command = server_config["command"]
+    args = server_config.get("args", [])
 
     # Create MCP request
     request = {
-        'jsonrpc': '2.0',
-        'id': str(uuid4()),
-        'method': 'tools/call',
-        'params': {
-            'name': tool_name,
-            'arguments': parameters
-        }
+        "jsonrpc": "2.0",
+        "id": str(uuid4()),
+        "method": "tools/call",
+        "params": {"name": tool_name, "arguments": parameters},
     }
 
-    request_json = json.dumps(request) + '\n'
+    request_json = json.dumps(request) + "\n"
 
     # Start MCP server process
     try:
@@ -137,21 +128,21 @@ async def call_mcp_tool_via_stdio(
             *args,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            stderr=asyncio.subprocess.PIPE,
         )
     except FileNotFoundError:
         raise MCPError(f"MCP server command not found: {command}")
 
     # Send request
-    stdout, stderr = await process.communicate(request_json.encode('utf-8'))
+    stdout, stderr = await process.communicate(request_json.encode("utf-8"))
 
     if stderr:
-        stderr_text = stderr.decode('utf-8', errors='replace')
+        stderr_text = stderr.decode("utf-8", errors="replace")
         print(f"MCP server stderr: {stderr_text}", file=sys.stderr)
 
     # Parse response
-    stdout_text = stdout.decode('utf-8', errors='replace')
-    lines = stdout_text.strip().split('\n')
+    stdout_text = stdout.decode("utf-8", errors="replace")
+    lines = stdout_text.strip().split("\n")
 
     for line in lines:
         if not line.strip():
@@ -160,24 +151,19 @@ async def call_mcp_tool_via_stdio(
         try:
             response = json.loads(line)
 
-            if 'error' in response:
-                raise MCPError(
-                    f"MCP tool error: {json.dumps(response['error'])}"
-                )
+            if "error" in response:
+                raise MCPError(f"MCP tool error: {json.dumps(response['error'])}")
 
-            if 'result' in response:
-                return response['result']
+            if "result" in response:
+                return response["result"]
         except json.JSONDecodeError:
             # Skip non-JSON lines (might be server logs)
             continue
 
-    raise MCPError('No valid MCP response received')
+    raise MCPError("No valid MCP response received")
 
 
-async def call_mcp_tool(
-    tool_name: str,
-    parameters: Dict[str, Any] = None
-) -> Any:
+async def call_mcp_tool(tool_name: str, parameters: Dict[str, Any] = None) -> Any:
     """
     Call an MCP tool.
 
@@ -204,19 +190,13 @@ async def call_mcp_tool(
     # Call tool via stdio (most common MCP transport)
     # Future: Add support for HTTP transport
     try:
-        result = await call_mcp_tool_via_stdio(
-            server_config,
-            tool,
-            parameters
-        )
+        result = await call_mcp_tool_via_stdio(server_config, tool, parameters)
         return result
     except Exception as e:
         raise MCPError(f"Failed to call MCP tool {tool_name}: {e}") from e
 
 
-async def call_mcp_tools_parallel(
-    calls: List[Dict[str, Any]]
-) -> List[Any]:
+async def call_mcp_tools_parallel(calls: List[Dict[str, Any]]) -> List[Any]:
     """
     Call multiple MCP tools in parallel.
 
@@ -232,15 +212,12 @@ async def call_mcp_tools_parallel(
         ...     {'tool': 'mcp__filesystem__readFile', 'parameters': {'path': '/tmp/b.json'}}
         ... ])
     """
-    tasks = [
-        call_mcp_tool(call['tool'], call.get('parameters', {}))
-        for call in calls
-    ]
+    tasks = [call_mcp_tool(call["tool"], call.get("parameters", {})) for call in calls]
     return await asyncio.gather(*tasks)
 
 
 async def call_mcp_tools_parallel_safe(
-    calls: List[Dict[str, Any]]
+    calls: List[Dict[str, Any]],
 ) -> List[Dict[str, Any]]:
     """
     Call multiple MCP tools in parallel with graceful error handling.
@@ -262,16 +239,15 @@ async def call_mcp_tools_parallel_safe(
         ...     else:
         ...         print(f"Failed: {result['error']}")
     """
-    tasks = [
-        call_mcp_tool(call['tool'], call.get('parameters', {}))
-        for call in calls
-    ]
+    tasks = [call_mcp_tool(call["tool"], call.get("parameters", {})) for call in calls]
 
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     return [
-        {'success': True, 'data': result}
-        if not isinstance(result, Exception)
-        else {'success': False, 'error': str(result)}
+        (
+            {"success": True, "data": result}
+            if not isinstance(result, Exception)
+            else {"success": False, "error": str(result)}
+        )
         for result in results
     ]
