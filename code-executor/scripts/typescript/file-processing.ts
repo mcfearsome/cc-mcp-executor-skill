@@ -14,7 +14,7 @@
  * Example Usage:
  * Process log files, analyze JSON data files, extract information from
  * multiple configuration files, generate reports from file contents
-
+ *
  * Execution:
  * deno run --allow-read --allow-run --allow-env file-processing.ts
  */

@@ -15,13 +15,18 @@
 
 interface MCPToolCall {
   tool: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
 }
 
 interface MCPToolResult {
   success: boolean;
-  data?: any;
+  data?: unknown;
   error?: string;
+}
+
+interface MCPServerConfig {
+  command: string;
+  args?: string[];
 }
 
 /**
@@ -45,7 +50,7 @@ function parseMCPToolName(toolName: string): { server: string; tool: string } {
 /**
  * Get MCP server configuration from environment or config file
  */
-async function getMCPServerConfig(serverName: string): Promise<any> {
+async function getMCPServerConfig(serverName: string): Promise<MCPServerConfig> {
   // Try environment variable first
   const configPath = Deno.env.get('MCP_CONFIG_PATH') ||
                      Deno.env.get('HOME') + '/.mcp.json';
@@ -70,10 +75,10 @@ async function getMCPServerConfig(serverName: string): Promise<any> {
  * Call an MCP tool via stdio protocol
  */
 async function callMCPToolViaStdio(
-  serverConfig: any,
+  serverConfig: MCPServerConfig,
   toolName: string,
-  parameters: Record<string, any>
-): Promise<any> {
+  parameters: Record<string, unknown>
+): Promise<unknown> {
   const command = new Deno.Command(serverConfig.command, {
     args: serverConfig.args || [],
     stdin: 'piped',
@@ -124,7 +129,7 @@ async function callMCPToolViaStdio(
       if (response.result) {
         return response.result;
       }
-    } catch (parseError) {
+    } catch (_parseError) {
       // Skip non-JSON lines (might be server logs)
       continue;
     }
@@ -149,8 +154,8 @@ async function callMCPToolViaStdio(
  */
 export async function callMCPTool(
   toolName: string,
-  parameters: Record<string, any> = {}
-): Promise<any> {
+  parameters: Record<string, unknown> = {}
+): Promise<unknown> {
   const { server, tool } = parseMCPToolName(toolName);
 
   // Get server configuration
@@ -184,7 +189,7 @@ export async function callMCPTool(
  */
 export async function callMCPToolsParallel(
   calls: MCPToolCall[]
-): Promise<any[]> {
+): Promise<unknown[]> {
   return await Promise.all(
     calls.map(({ tool, parameters }) => callMCPTool(tool, parameters))
   );
@@ -214,7 +219,7 @@ export async function callMCPToolsParallel(
  */
 export async function callMCPToolsParallelSettled(
   calls: MCPToolCall[]
-): Promise<PromiseSettledResult<any>[]> {
+): Promise<PromiseSettledResult<unknown>[]> {
   return await Promise.allSettled(
     calls.map(({ tool, parameters }) => callMCPTool(tool, parameters))
   );

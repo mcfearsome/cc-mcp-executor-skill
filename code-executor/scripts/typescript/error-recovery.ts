@@ -14,8 +14,7 @@
  * Example Usage:
  * Fetching data from unreliable APIs, database queries with failover,
  * or any operation that might need multiple attempts
- */
-
+ *
  * Execution:
  * deno run --allow-read --allow-run --allow-env error-recovery.ts
  */
