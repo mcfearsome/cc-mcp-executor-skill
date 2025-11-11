@@ -1,0 +1,24 @@
+{
+  "name": "mcp-executor",
+  "version": "2.0.0",
+  "description": "Efficient multi-tool MCP workflows via subagent architecture - reduces token overhead by 98%",
+  "author": {
+    "name": "mcfearsome",
+    "url": "https://github.com/mcfearsome"
+  },
+  "homepage": "https://github.com/mcfearsome/cc-mcp-executor-skill#readme",
+  "repository": "https://github.com/mcfearsome/cc-mcp-executor-skill",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "skill",
+    "efficiency",
+    "subagent",
+    "workflow",
+    "multi-tool",
+    "code-execution",
+    "typescript",
+    "python"
+  ],
+  "skills": "./code-executor"
+}
