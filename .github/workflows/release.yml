@@ -40,7 +40,7 @@ jobs:
           zip -r code-executor-skill-${GITHUB_REF_NAME}.zip code-executor/
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           body: |
             ## Changes
