@@ -18,7 +18,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Dict, Any, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from uuid import uuid4
 
 
@@ -67,11 +67,11 @@ async def get_mcp_server_config(server_name: str) -> Dict[str, Any]:
         MCPError: If server not configured
     """
     # Try environment variable first
-    config_path = os.getenv("MCP_CONFIG_PATH")
-    if not config_path:
-        config_path = os.path.join(os.path.expanduser("~"), ".mcp.json")
+    config_path_str = os.getenv("MCP_CONFIG_PATH")
+    if not config_path_str:
+        config_path_str = os.path.join(os.path.expanduser("~"), ".mcp.json")
 
-    config_path = Path(config_path)
+    config_path = Path(config_path_str)
 
     if not config_path.exists():
         raise FileNotFoundError(f"MCP config file not found: {config_path}")
@@ -163,7 +163,9 @@ async def call_mcp_tool_via_stdio(
     raise MCPError("No valid MCP response received")
 
 
-async def call_mcp_tool(tool_name: str, parameters: Dict[str, Any] = None) -> Any:
+async def call_mcp_tool(
+    tool_name: str, parameters: Optional[Dict[str, Any]] = None
+) -> Any:
     """
     Call an MCP tool.
 
