@@ -16,6 +16,12 @@
  * multiple configuration files, generate reports from file contents
  */
 
+ * Execution:
+ * deno run --allow-read --allow-run --allow-env file-processing.ts
+ */
+
+import { callMCPTool, callMCPToolsParallel, callMCPToolsParallelSettled } from '../../lib/mcp-client.ts';
+
 interface FileInfo {
   path: string;
   name: string;

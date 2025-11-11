@@ -12,7 +12,12 @@
  *
  * Example Usage:
  * Use for workflows like: fetch data → transform → store results
+ *
+ * Execution:
+ * deno run --allow-read --allow-run --allow-env your-script.ts
  */
+
+import { callMCPTool, callMCPToolsParallel } from '../lib/mcp-client.ts';
 
 // TODO: Define your tool calls
 const tools = [

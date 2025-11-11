@@ -16,6 +16,11 @@ Fetching data from unreliable APIs, database queries with failover,
 or any operation that might need multiple attempts
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+from lib.mcp_client import call_mcp_tool, call_mcp_tools_parallel, call_mcp_tools_parallel_safe
+
 import asyncio
 import json
 from typing import Dict, Any, TypedDict

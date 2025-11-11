@@ -12,7 +12,15 @@ How to Adapt:
 
 Example Usage:
 Copy this template, rename it, and modify for your specific use case
+
+Execution:
+python your-script.py
 """
+
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from lib.mcp_client import call_mcp_tool
 
 # TODO: Replace with your tool name (format: mcp__server__tool)
 TOOL_NAME = 'mcp__server__tool'

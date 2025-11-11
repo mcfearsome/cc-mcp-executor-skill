@@ -14,7 +14,12 @@
  * Example Usage:
  * Combine user data from multiple databases, aggregate metrics from
  * different analytics services, merge API responses
+ *
+ * Execution:
+ * deno run --allow-read --allow-run --allow-env data-aggregation.ts
  */
+
+import { callMCPTool, callMCPToolsParallel, callMCPToolsParallelSettled } from '../../lib/mcp-client.ts';
 
 interface DataSource {
   name: string;

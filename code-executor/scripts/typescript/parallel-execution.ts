@@ -14,7 +14,12 @@
  * Example Usage:
  * Fetch data from multiple sources simultaneously, aggregate analytics from
  * different services, or perform bulk operations in parallel
+ *
+ * Execution:
+ * deno run --allow-read --allow-run --allow-env parallel-execution.ts
  */
+
+import { callMCPTool, callMCPToolsParallel, callMCPToolsParallelSettled } from '../../lib/mcp-client.ts';
 
 interface ParallelResult {
   success: boolean;

@@ -16,6 +16,11 @@ Combine user data from multiple databases, aggregate metrics from
 different analytics services, merge API responses
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+from lib.mcp_client import call_mcp_tool, call_mcp_tools_parallel, call_mcp_tools_parallel_safe
+
 import asyncio
 import json
 from typing import List, Dict, Any, Callable

@@ -16,6 +16,11 @@ Route requests to different APIs based on data type, select processing
 method based on file size, choose storage backend based on content
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+from lib.mcp_client import call_mcp_tool, call_mcp_tools_parallel, call_mcp_tools_parallel_safe
+
 import json
 from typing import Dict, Any, Literal
 from datetime import datetime

@@ -15,6 +15,11 @@ Example Usage:
 Processing workflow: Fetch → Transform → Validate → Store → Report
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+from lib.mcp_client import call_mcp_tool, call_mcp_tools_parallel, call_mcp_tools_parallel_safe
+
 import json
 from typing import Dict, List, Any
 from datetime import datetime

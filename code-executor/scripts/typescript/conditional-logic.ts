@@ -14,7 +14,12 @@
  * Example Usage:
  * Route requests to different APIs based on data type, select processing
  * method based on file size, choose storage backend based on content
+ *
+ * Execution:
+ * deno run --allow-read --allow-run --allow-env conditional-logic.ts
  */
+
+import { callMCPTool, callMCPToolsParallel, callMCPToolsParallelSettled } from '../../lib/mcp-client.ts';
 
 interface ProcessingOptions {
   dataType: 'json' | 'xml' | 'csv' | 'binary';

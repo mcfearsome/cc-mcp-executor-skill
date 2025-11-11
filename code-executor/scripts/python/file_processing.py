@@ -16,6 +16,11 @@ Process log files, analyze JSON data files, extract information from
 multiple configuration files, generate reports from file contents
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
+from lib.mcp_client import call_mcp_tool, call_mcp_tools_parallel, call_mcp_tools_parallel_safe
+
 import asyncio
 import json
 from typing import List, Dict, Any

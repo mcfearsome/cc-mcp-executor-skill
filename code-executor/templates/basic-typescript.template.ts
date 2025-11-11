@@ -12,7 +12,12 @@
  *
  * Example Usage:
  * Copy this template, rename it, and modify for your specific use case
+ *
+ * Execution:
+ * deno run --allow-read --allow-run --allow-env your-script.ts
  */
+
+import { callMCPTool } from '../lib/mcp-client.ts';
 
 // TODO: Replace with your tool name (format: mcp__server__tool)
 const TOOL_NAME = 'mcp__server__tool';

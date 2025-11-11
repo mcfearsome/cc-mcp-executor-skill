@@ -13,7 +13,12 @@
  *
  * Example Usage:
  * Processing workflow: Fetch → Transform → Validate → Store → Report
+ *
+ * Execution:
+ * deno run --allow-read --allow-run --allow-env multi-tool-workflow.ts
  */
+
+import { callMCPTool } from '../../lib/mcp-client.ts';
 
 interface PipelineResult {
   success: boolean;

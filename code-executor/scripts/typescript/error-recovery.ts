@@ -16,6 +16,12 @@
  * or any operation that might need multiple attempts
  */
 
+ * Execution:
+ * deno run --allow-read --allow-run --allow-env error-recovery.ts
+ */
+
+import { callMCPTool, callMCPToolsParallel, callMCPToolsParallelSettled } from '../../lib/mcp-client.ts';
+
 interface RetryConfig {
   maxRetries: number;
   initialDelay: number;  // milliseconds

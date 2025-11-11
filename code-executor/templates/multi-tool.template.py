@@ -12,7 +12,15 @@ How to Adapt:
 
 Example Usage:
 Use for workflows like: fetch data → transform → store results
+
+Execution:
+python your-script.py
 """
+
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from lib.mcp_client import call_mcp_tool, call_mcp_tools_parallel
 
 import asyncio
 from typing import List, Dict, Any
