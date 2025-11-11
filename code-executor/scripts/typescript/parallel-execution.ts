@@ -19,57 +19,62 @@
  * deno run --allow-read --allow-run --allow-env parallel-execution.ts
  */
 
-import { callMCPTool, callMCPToolsParallel, callMCPToolsParallelSettled } from '../../lib/mcp-client.ts';
+import { callMCPTool } from "../../lib/mcp-client.ts";
 
 interface ParallelResult {
   success: boolean;
   completed: number;
   failed: number;
-  results: any[];
+  results: unknown[];
   errors: string[];
   duration: number;
   speedup: string;
 }
 
 async function parallelExecution(): Promise<ParallelResult> {
-  console.log('=== Starting Parallel Execution ===');
+  console.log("=== Starting Parallel Execution ===");
   const startTime = Date.now();
 
   // Define independent operations to run in parallel
   const operations = [
     {
-      name: 'Fetch Users',
-      call: () => callMCPTool('mcp__database__query', {
-        table: 'users',
-        limit: 1000
-      })
+      name: "Fetch Users",
+      call: () =>
+        callMCPTool("mcp__database__query", {
+          table: "users",
+          limit: 1000,
+        }),
     },
     {
-      name: 'Fetch Orders',
-      call: () => callMCPTool('mcp__database__query', {
-        table: 'orders',
-        limit: 1000
-      })
+      name: "Fetch Orders",
+      call: () =>
+        callMCPTool("mcp__database__query", {
+          table: "orders",
+          limit: 1000,
+        }),
     },
     {
-      name: 'Fetch Products',
-      call: () => callMCPTool('mcp__database__query', {
-        table: 'products',
-        limit: 500
-      })
+      name: "Fetch Products",
+      call: () =>
+        callMCPTool("mcp__database__query", {
+          table: "products",
+          limit: 500,
+        }),
     },
     {
-      name: 'Get Analytics',
-      call: () => callMCPTool('mcp__analytics__getMetrics', {
-        period: 'last_7_days'
-      })
+      name: "Get Analytics",
+      call: () =>
+        callMCPTool("mcp__analytics__getMetrics", {
+          period: "last_7_days",
+        }),
     },
     {
-      name: 'Load Config',
-      call: () => callMCPTool('mcp__config__get', {
-        key: 'app_settings'
-      })
-    }
+      name: "Load Config",
+      call: () =>
+        callMCPTool("mcp__config__get", {
+          key: "app_settings",
+        }),
+    },
   ];
 
   console.log(`Executing ${operations.length} operations in parallel...`);
@@ -84,38 +89,53 @@ async function parallelExecution(): Promise<ParallelResult> {
       try {
         const result = await op.call();
         const duration = Date.now() - opStart;
-        console.log(`✓ [${index + 1}/${operations.length}] ${op.name} completed (${duration}ms)`);
+        console.log(
+          `✓ [${
+            index + 1
+          }/${operations.length}] ${op.name} completed (${duration}ms)`,
+        );
 
         return {
           name: op.name,
           success: true,
           data: result,
-          duration
+          duration,
         };
       } catch (error) {
         const duration = Date.now() - opStart;
-        console.error(`✗ [${index + 1}/${operations.length}] ${op.name} failed (${duration}ms): ${error.message}`);
+        console.error(
+          `✗ [${
+            index + 1
+          }/${operations.length}] ${op.name} failed (${duration}ms): ${error.message}`,
+        );
 
         return {
           name: op.name,
           success: false,
           error: error.message,
-          duration
+          duration,
         };
       }
-    })
+    }),
   );
 
   // Analyze results
-  const completed = results.filter(r => r.status === 'fulfilled' && r.value.success);
-  const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success));
+  const completed = results.filter((r) =>
+    r.status === "fulfilled" && (r.value as { success: boolean }).success
+  );
+  const failed = results.filter((r) =>
+    r.status === "rejected" ||
+    (r.status === "fulfilled" && !(r.value as { success: boolean }).success)
+  );
 
-  const successfulResults = completed.map(r => (r as PromiseFulfilledResult<any>).value);
-  const errors = failed.map(r => {
-    if (r.status === 'rejected') {
+  const successfulResults = completed.map((r) =>
+    (r as PromiseFulfilledResult<unknown>).value
+  );
+  const errors = failed.map((r) => {
+    if (r.status === "rejected") {
       return r.reason.message;
     } else {
-      return (r as PromiseFulfilledResult<any>).value.error;
+      return (r as PromiseFulfilledResult<{ error: string }>).value.error;
     }
   });
 
@@ -123,14 +143,14 @@ async function parallelExecution(): Promise<ParallelResult> {
 
   // Calculate estimated sequential time (sum of individual durations)
   const estimatedSequentialTime = successfulResults.reduce(
-    (sum, r) => sum + r.duration,
-    0
+    (sum, r) => sum + ((r as { duration?: number }).duration || 0),
+    0,
   );
   const speedup = estimatedSequentialTime > 0
     ? `${(estimatedSequentialTime / totalDuration).toFixed(2)}x faster`
-    : 'N/A';
+    : "N/A";
 
-  console.log('\n=== Execution Summary ===');
+  console.log("\n=== Execution Summary ===");
   console.log(`Total time: ${totalDuration}ms`);
   console.log(`Estimated sequential time: ${estimatedSequentialTime}ms`);
   console.log(`Speedup: ${speedup}`);
@@ -138,7 +158,7 @@ async function parallelExecution(): Promise<ParallelResult> {
   console.log(`Failed: ${failed.length}/${operations.length}`);
 
   if (failed.length > 0) {
-    console.warn('\nFailed operations:');
+    console.warn("\nFailed operations:");
     errors.forEach((err, i) => console.warn(`  ${i + 1}. ${err}`));
   }
 
@@ -149,7 +169,7 @@ async function parallelExecution(): Promise<ParallelResult> {
     results: successfulResults,
     errors,
     duration: totalDuration,
-    speedup
+    speedup,
   };
 }
 
@@ -186,7 +206,7 @@ async function parallelExecutionFailFast() {
 const result = await parallelExecution();
 
 if (result.success) {
-  console.log('\n✓ All operations completed successfully');
+  console.log("\n✓ All operations completed successfully");
 } else {
   console.log(`\n⚠ Completed with ${result.failed} failures`);
 }

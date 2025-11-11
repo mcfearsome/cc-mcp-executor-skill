@@ -17,22 +17,22 @@
  * deno run --allow-read --allow-run --allow-env your-script.ts
  */
 
-import { callMCPTool, callMCPToolsParallel } from '../lib/mcp-client.ts';
+import { callMCPTool, callMCPToolsParallel } from "../lib/mcp-client.ts";
 
 // TODO: Define your tool calls
 const tools = [
   {
-    name: 'mcp__server1__tool1',
-    params: { /* tool 1 parameters */ }
+    name: "mcp__server1__tool1",
+    params: {/* tool 1 parameters */},
   },
   {
-    name: 'mcp__server2__tool2',
-    params: { /* tool 2 parameters */ }
+    name: "mcp__server2__tool2",
+    params: {/* tool 2 parameters */},
   },
   {
-    name: 'mcp__server3__tool3',
-    params: { /* tool 3 parameters */ }
-  }
+    name: "mcp__server3__tool3",
+    params: {/* tool 3 parameters */},
+  },
 ];
 
 console.log(`Executing ${tools.length} tool operations...`);
@@ -55,13 +55,13 @@ try {
   // OPTION B: Parallel Execution (all at once)
   // Use when operations are independent
   const results = await Promise.all(
-    tools.map(tool => {
+    tools.map((tool) => {
       console.log(`Calling ${tool.name}...`);
       return callMCPTool(tool.name, tool.params);
-    })
+    }),
   );
 
-  console.log('All tool calls completed');
+  console.log("All tool calls completed");
 
   // TODO: Process and combine results
   const combined = {
@@ -74,11 +74,10 @@ try {
   return {
     success: true,
     toolsCalled: tools.length,
-    data: combined
+    data: combined,
   };
-
 } catch (error) {
-  console.error('Error in multi-tool execution:', error.message);
+  console.error("Error in multi-tool execution:", error.message);
 
   // TODO: Decide error handling strategy
   // - Fail fast: throw error to stop everything
@@ -86,7 +85,7 @@ try {
 
   return {
     success: false,
-    error: error.message
+    error: error.message,
   };
 }
 

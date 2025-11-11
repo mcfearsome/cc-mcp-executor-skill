@@ -18,13 +18,13 @@
  * deno run --allow-read --allow-run --allow-env multi-tool-workflow.ts
  */
 
-import { callMCPTool } from '../../lib/mcp-client.ts';
+import { callMCPTool } from "../../lib/mcp-client.ts";
 
 interface PipelineResult {
   success: boolean;
   stepsCompleted: number;
   totalSteps: number;
-  data?: any;
+  data?: unknown;
   error?: string;
   duration: number;
 }
@@ -35,34 +35,36 @@ async function multiToolWorkflow(): Promise<PipelineResult> {
   let stepsCompleted = 0;
 
   try {
-    console.log('=== Starting Multi-Tool Workflow ===');
+    console.log("=== Starting Multi-Tool Workflow ===");
 
     // Step 1: Fetch data from source
-    console.log('[Step 1/5] Fetching data from source...');
-    const rawData = await callMCPTool('mcp__database__query', {
-      table: 'source_data',
-      limit: 100
+    console.log("[Step 1/5] Fetching data from source...");
+    const rawData = await callMCPTool("mcp__database__query", {
+      table: "source_data",
+      limit: 100,
     });
     stepsCompleted++;
     console.log(`✓ Fetched ${rawData.length} records`);
 
     // Step 2: Transform data
-    console.log('[Step 2/5] Transforming data...');
-    const transformed = rawData.map((record: any) => ({
+    console.log("[Step 2/5] Transforming data...");
+    const transformed = (rawData as Record<string, unknown>[]).map((
+      record,
+    ) => ({
       id: record.id,
       name: record.full_name || record.name,
-      email: record.email.toLowerCase(),
-      created_at: new Date(record.timestamp).toISOString(),
-      status: record.is_active ? 'active' : 'inactive'
+      email: (record.email as string).toLowerCase(),
+      created_at: new Date(record.timestamp as string).toISOString(),
+      status: record.is_active ? "active" : "inactive",
     }));
     stepsCompleted++;
     console.log(`✓ Transformed ${transformed.length} records`);
 
     // Step 3: Validate data
-    console.log('[Step 3/5] Validating data...');
-    const validated = transformed.filter((record: any) => {
+    console.log("[Step 3/5] Validating data...");
+    const validated = transformed.filter((record) => {
       const hasRequiredFields = record.id && record.name && record.email;
-      const validEmail = record.email.includes('@');
+      const validEmail = (record.email as string).includes("@");
       return hasRequiredFields && validEmail;
     });
 
@@ -74,16 +76,16 @@ async function multiToolWorkflow(): Promise<PipelineResult> {
     console.log(`✓ Validated ${validated.length} records`);
 
     // Step 4: Store processed data
-    console.log('[Step 4/5] Storing processed data...');
-    const storeResult = await callMCPTool('mcp__database__bulkInsert', {
-      table: 'processed_data',
-      records: validated
+    console.log("[Step 4/5] Storing processed data...");
+    const storeResult = await callMCPTool("mcp__database__bulkInsert", {
+      table: "processed_data",
+      records: validated,
     });
     stepsCompleted++;
     console.log(`✓ Stored ${storeResult.inserted} records`);
 
     // Step 5: Generate report
-    console.log('[Step 5/5] Generating report...');
+    console.log("[Step 5/5] Generating report...");
     const report = {
       timestamp: new Date().toISOString(),
       source_records: rawData.length,
@@ -91,15 +93,16 @@ async function multiToolWorkflow(): Promise<PipelineResult> {
       validated: validated.length,
       invalid: invalidCount,
       stored: storeResult.inserted,
-      success_rate: ((validated.length / rawData.length) * 100).toFixed(2) + '%'
+      success_rate: ((validated.length / rawData.length) * 100).toFixed(2) +
+        "%",
     };
 
-    await callMCPTool('mcp__filesystem__writeFile', {
-      path: '/tmp/workflow-report.json',
-      content: JSON.stringify(report, null, 2)
+    await callMCPTool("mcp__filesystem__writeFile", {
+      path: "/tmp/workflow-report.json",
+      content: JSON.stringify(report, null, 2),
     });
     stepsCompleted++;
-    console.log('✓ Report saved to /tmp/workflow-report.json');
+    console.log("✓ Report saved to /tmp/workflow-report.json");
 
     const duration = Date.now() - startTime;
     console.log(`=== Workflow Complete (${duration}ms) ===`);
@@ -109,23 +112,24 @@ async function multiToolWorkflow(): Promise<PipelineResult> {
       stepsCompleted,
       totalSteps,
       data: report,
-      duration
+      duration,
     };
-
   } catch (error) {
-    console.error(`✗ Workflow failed at step ${stepsCompleted + 1}/${totalSteps}`);
-    console.error('Error:', error.message);
+    console.error(
+      `✗ Workflow failed at step ${stepsCompleted + 1}/${totalSteps}`,
+    );
+    console.error("Error:", error.message);
 
     return {
       success: false,
       stepsCompleted,
       totalSteps,
       error: error.message,
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
     };
   }
 }
 
 // Execute workflow
 const result = await multiToolWorkflow();
-console.log('Final result:', JSON.stringify(result, null, 2));
+console.log("Final result:", JSON.stringify(result, null, 2));

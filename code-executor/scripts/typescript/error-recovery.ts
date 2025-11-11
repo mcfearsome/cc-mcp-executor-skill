@@ -19,19 +19,19 @@
  * deno run --allow-read --allow-run --allow-env error-recovery.ts
  */
 
-import { callMCPTool, callMCPToolsParallel, callMCPToolsParallelSettled } from '../../lib/mcp-client.ts';
+import { callMCPTool } from "../../lib/mcp-client.ts";
 
 interface RetryConfig {
   maxRetries: number;
-  initialDelay: number;  // milliseconds
-  maxDelay: number;      // milliseconds
+  initialDelay: number; // milliseconds
+  maxDelay: number; // milliseconds
   backoffMultiplier: number;
 }
 
 interface RecoveryResult {
   success: boolean;
-  data?: any;
-  source: 'primary' | 'secondary' | 'cache' | 'default';
+  data?: unknown;
+  source: "primary" | "secondary" | "cache" | "default";
   attempts: number;
   duration: number;
   errors: string[];
@@ -42,9 +42,9 @@ interface RecoveryResult {
  */
 async function callWithRetry(
   toolName: string,
-  params: Record<string, any>,
-  config: RetryConfig
-): Promise<any> {
+  params: Record<string, unknown>,
+  config: RetryConfig,
+): Promise<unknown> {
   let lastError: Error;
 
   for (let attempt = 0; attempt < config.maxRetries; attempt++) {
@@ -62,11 +62,11 @@ async function callWithRetry(
         // Calculate delay with exponential backoff
         const delay = Math.min(
           config.initialDelay * Math.pow(config.backoffMultiplier, attempt),
-          config.maxDelay
+          config.maxDelay,
         );
 
         console.log(`Waiting ${delay}ms before retry...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
   }
@@ -86,55 +86,57 @@ async function fetchDataWithRecovery(dataId: string): Promise<RecoveryResult> {
   // Configuration for retry logic
   const retryConfig: RetryConfig = {
     maxRetries: 3,
-    initialDelay: 1000,    // Start with 1 second
-    maxDelay: 10000,       // Cap at 10 seconds
-    backoffMultiplier: 2   // Double delay each time (1s, 2s, 4s)
+    initialDelay: 1000, // Start with 1 second
+    maxDelay: 10000, // Cap at 10 seconds
+    backoffMultiplier: 2, // Double delay each time (1s, 2s, 4s)
   };
 
-  console.log('=== Starting Data Fetch with Error Recovery ===');
+  console.log("=== Starting Data Fetch with Error Recovery ===");
   console.log(`Target: ${dataId}`);
 
   // Strategy 1: Try primary service with retries
-  console.log('\n[Strategy 1] Attempting primary service with retries...');
+  console.log("\n[Strategy 1] Attempting primary service with retries...");
   try {
     const data = await callWithRetry(
-      'mcp__primary__getData',
+      "mcp__primary__getData",
       { id: dataId, timeout: 5000 },
-      retryConfig
+      retryConfig,
     );
 
-    attempts += retryConfig.maxRetries;  // Count actual attempts made
+    attempts += retryConfig.maxRetries; // Count actual attempts made
 
     return {
       success: true,
       data,
-      source: 'primary',
+      source: "primary",
       attempts,
       duration: Date.now() - startTime,
-      errors
+      errors,
     };
   } catch (error) {
     errors.push(`Primary service: ${error.message}`);
-    console.error(`✗ Primary service failed after ${retryConfig.maxRetries} attempts`);
+    console.error(
+      `✗ Primary service failed after ${retryConfig.maxRetries} attempts`,
+    );
   }
 
   // Strategy 2: Try secondary/fallback service
-  console.log('\n[Strategy 2] Attempting secondary service...');
+  console.log("\n[Strategy 2] Attempting secondary service...");
   try {
     attempts++;
-    const data = await callMCPTool('mcp__secondary__getData', {
-      id: dataId
+    const data = await callMCPTool("mcp__secondary__getData", {
+      id: dataId,
     });
 
-    console.log('✓ Secondary service succeeded');
+    console.log("✓ Secondary service succeeded");
 
     return {
       success: true,
       data,
-      source: 'secondary',
+      source: "secondary",
       attempts,
       duration: Date.now() - startTime,
-      errors
+      errors,
     };
   } catch (error) {
     errors.push(`Secondary service: ${error.message}`);
@@ -142,27 +144,27 @@ async function fetchDataWithRecovery(dataId: string): Promise<RecoveryResult> {
   }
 
   // Strategy 3: Try cache as last resort
-  console.log('\n[Strategy 3] Attempting cached data...');
+  console.log("\n[Strategy 3] Attempting cached data...");
   try {
     attempts++;
-    const data = await callMCPTool('mcp__cache__get', {
-      key: `data:${dataId}`
+    const data = await callMCPTool("mcp__cache__get", {
+      key: `data:${dataId}`,
     });
 
     if (data && data.value) {
-      console.log('✓ Found cached data');
-      console.warn('⚠ Using potentially stale cached data');
+      console.log("✓ Found cached data");
+      console.warn("⚠ Using potentially stale cached data");
 
       return {
         success: true,
         data: data.value,
-        source: 'cache',
+        source: "cache",
         attempts,
         duration: Date.now() - startTime,
-        errors
+        errors,
       };
     } else {
-      throw new Error('No cached data available');
+      throw new Error("No cached data available");
     }
   } catch (error) {
     errors.push(`Cache: ${error.message}`);
@@ -170,16 +172,18 @@ async function fetchDataWithRecovery(dataId: string): Promise<RecoveryResult> {
   }
 
   // Strategy 4: Return default/empty data
-  console.log('\n[Strategy 4] All strategies exhausted, returning default data');
-  console.warn('⚠ Returning default empty result');
+  console.log(
+    "\n[Strategy 4] All strategies exhausted, returning default data",
+  );
+  console.warn("⚠ Returning default empty result");
 
   return {
     success: false,
     data: null,
-    source: 'default',
+    source: "default",
     attempts,
     duration: Date.now() - startTime,
-    errors
+    errors,
   };
 }
 
@@ -188,42 +192,44 @@ async function batchProcessWithRecovery(ids: string[]) {
   console.log(`\n=== Batch Processing ${ids.length} items ===\n`);
 
   const results = await Promise.all(
-    ids.map(id => fetchDataWithRecovery(id))
+    ids.map((id) => fetchDataWithRecovery(id)),
   );
 
-  const successful = results.filter(r => r.success && r.source !== 'default');
-  const fromCache = results.filter(r => r.success && r.source === 'cache');
-  const failed = results.filter(r => !r.success);
+  const successful = results.filter((r) => r.success && r.source !== "default");
+  const fromCache = results.filter((r) => r.success && r.source === "cache");
+  const failed = results.filter((r) => !r.success);
 
-  console.log('\n=== Batch Processing Summary ===');
+  console.log("\n=== Batch Processing Summary ===");
   console.log(`Total items: ${ids.length}`);
   console.log(`Successful: ${successful.length}`);
   console.log(`From cache: ${fromCache.length}`);
   console.log(`Failed: ${failed.length}`);
 
   if (fromCache.length > 0) {
-    console.warn(`⚠ ${fromCache.length} items retrieved from potentially stale cache`);
+    console.warn(
+      `⚠ ${fromCache.length} items retrieved from potentially stale cache`,
+    );
   }
 
   return { successful, fromCache, failed };
 }
 
 // Execute single fetch
-console.log('Example 1: Single Item Recovery');
-const singleResult = await fetchDataWithRecovery('user-123');
-console.log('\nResult:', {
+console.log("Example 1: Single Item Recovery");
+const singleResult = await fetchDataWithRecovery("user-123");
+console.log("\nResult:", {
   success: singleResult.success,
   source: singleResult.source,
   attempts: singleResult.attempts,
   duration: `${singleResult.duration}ms`,
-  errorCount: singleResult.errors.length
+  errorCount: singleResult.errors.length,
 });
 
 // Execute batch processing
-console.log('\n\n' + '='.repeat(50));
-console.log('Example 2: Batch Processing with Recovery');
-const batchResult = await batchProcessWithRecovery([
-  'user-123',
-  'user-456',
-  'user-789'
+console.log("\n\n" + "=".repeat(50));
+console.log("Example 2: Batch Processing with Recovery");
+const _batchResult = await batchProcessWithRecovery([
+  "user-123",
+  "user-456",
+  "user-789",
 ]);

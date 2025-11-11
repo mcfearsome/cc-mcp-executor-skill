@@ -17,10 +17,10 @@
  * deno run --allow-read --allow-run --allow-env your-script.ts
  */
 
-import { callMCPTool } from '../lib/mcp-client.ts';
+import { callMCPTool } from "../lib/mcp-client.ts";
 
 // TODO: Replace with your tool name (format: mcp__server__tool)
-const TOOL_NAME = 'mcp__server__tool';
+const TOOL_NAME = "mcp__server__tool";
 
 // TODO: Define parameters for your tool call
 const parameters = {
@@ -36,7 +36,7 @@ try {
   // Step 1: Call MCP tool
   const result = await callMCPTool(TOOL_NAME, parameters);
 
-  console.log('Tool call successful');
+  console.log("Tool call successful");
 
   // Step 2: TODO: Process the result
   // Add your custom logic here
@@ -45,16 +45,15 @@ try {
   // Step 3: TODO: Return your result
   return {
     success: true,
-    data: processed
+    data: processed,
     // Add any additional fields you need
   };
-
 } catch (error) {
   // Step 4: Handle errors
   console.error(`Error calling ${TOOL_NAME}:`, error.message);
 
   return {
     success: false,
-    error: error.message
+    error: error.message,
   };
 }

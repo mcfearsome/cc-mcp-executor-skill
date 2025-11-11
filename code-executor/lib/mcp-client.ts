@@ -33,40 +33,44 @@ interface MCPServerConfig {
  * Parse MCP tool name into server and tool components
  */
 function parseMCPToolName(toolName: string): { server: string; tool: string } {
-  const parts = toolName.split('__');
+  const parts = toolName.split("__");
 
-  if (parts.length !== 3 || parts[0] !== 'mcp') {
+  if (parts.length !== 3 || parts[0] !== "mcp") {
     throw new Error(
-      `Invalid MCP tool name format: ${toolName}. Expected: mcp__<server>__<tool>`
+      `Invalid MCP tool name format: ${toolName}. Expected: mcp__<server>__<tool>`,
     );
   }
 
   return {
     server: parts[1],
-    tool: parts[2]
+    tool: parts[2],
   };
 }
 
 /**
  * Get MCP server configuration from environment or config file
  */
-async function getMCPServerConfig(serverName: string): Promise<MCPServerConfig> {
+async function getMCPServerConfig(
+  serverName: string,
+): Promise<MCPServerConfig> {
   // Try environment variable first
-  const configPath = Deno.env.get('MCP_CONFIG_PATH') ||
-                     Deno.env.get('HOME') + '/.mcp.json';
+  const configPath = Deno.env.get("MCP_CONFIG_PATH") ||
+    Deno.env.get("HOME") + "/.mcp.json";
 
   try {
     const configContent = await Deno.readTextFile(configPath);
     const config = JSON.parse(configContent);
 
     if (!config.mcpServers || !config.mcpServers[serverName]) {
-      throw new Error(`MCP server '${serverName}' not found in config: ${configPath}`);
+      throw new Error(
+        `MCP server '${serverName}' not found in config: ${configPath}`,
+      );
     }
 
     return config.mcpServers[serverName];
   } catch (error) {
     throw new Error(
-      `Failed to load MCP config from ${configPath}: ${error.message}`
+      `Failed to load MCP config from ${configPath}: ${error.message}`,
     );
   }
 }
@@ -77,13 +81,13 @@ async function getMCPServerConfig(serverName: string): Promise<MCPServerConfig> 
 async function callMCPToolViaStdio(
   serverConfig: MCPServerConfig,
   toolName: string,
-  parameters: Record<string, unknown>
+  parameters: Record<string, unknown>,
 ): Promise<unknown> {
   const command = new Deno.Command(serverConfig.command, {
     args: serverConfig.args || [],
-    stdin: 'piped',
-    stdout: 'piped',
-    stderr: 'piped',
+    stdin: "piped",
+    stdout: "piped",
+    stderr: "piped",
   });
 
   const process = command.spawn();
@@ -91,17 +95,17 @@ async function callMCPToolViaStdio(
 
   // Send MCP request
   const request = {
-    jsonrpc: '2.0',
+    jsonrpc: "2.0",
     id: crypto.randomUUID(),
-    method: 'tools/call',
+    method: "tools/call",
     params: {
       name: toolName,
-      arguments: parameters
-    }
+      arguments: parameters,
+    },
   };
 
   const encoder = new TextEncoder();
-  await writer.write(encoder.encode(JSON.stringify(request) + '\n'));
+  await writer.write(encoder.encode(JSON.stringify(request) + "\n"));
   await writer.close();
 
   // Read response
@@ -111,11 +115,11 @@ async function callMCPToolViaStdio(
   const stderr = decoder.decode(output.stderr);
 
   if (stderr) {
-    console.error('MCP server stderr:', stderr);
+    console.error("MCP server stderr:", stderr);
   }
 
   // Parse JSON-RPC response
-  const lines = stdout.trim().split('\n');
+  const lines = stdout.trim().split("\n");
   for (const line of lines) {
     if (!line.trim()) continue;
 
@@ -135,7 +139,7 @@ async function callMCPToolViaStdio(
     }
   }
 
-  throw new Error('No valid MCP response received');
+  throw new Error("No valid MCP response received");
 }
 
 /**
@@ -154,7 +158,7 @@ async function callMCPToolViaStdio(
  */
 export async function callMCPTool(
   toolName: string,
-  parameters: Record<string, unknown> = {}
+  parameters: Record<string, unknown> = {},
 ): Promise<unknown> {
   const { server, tool } = parseMCPToolName(toolName);
 
@@ -168,7 +172,7 @@ export async function callMCPTool(
     return result;
   } catch (error) {
     throw new Error(
-      `Failed to call MCP tool ${toolName}: ${error.message}`
+      `Failed to call MCP tool ${toolName}: ${error.message}`,
     );
   }
 }
@@ -188,10 +192,10 @@ export async function callMCPTool(
  * ```
  */
 export async function callMCPToolsParallel(
-  calls: MCPToolCall[]
+  calls: MCPToolCall[],
 ): Promise<unknown[]> {
   return await Promise.all(
-    calls.map(({ tool, parameters }) => callMCPTool(tool, parameters))
+    calls.map(({ tool, parameters }) => callMCPTool(tool, parameters)),
   );
 }
 
@@ -218,9 +222,9 @@ export async function callMCPToolsParallel(
  * ```
  */
 export async function callMCPToolsParallelSettled(
-  calls: MCPToolCall[]
+  calls: MCPToolCall[],
 ): Promise<PromiseSettledResult<unknown>[]> {
   return await Promise.allSettled(
-    calls.map(({ tool, parameters }) => callMCPTool(tool, parameters))
+    calls.map(({ tool, parameters }) => callMCPTool(tool, parameters)),
   );
 }
