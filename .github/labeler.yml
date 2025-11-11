@@ -1,0 +1,28 @@
+'documentation':
+  - '**/*.md'
+
+'typescript':
+  - 'code-executor/**/*.ts'
+  - 'code-executor/lib/mcp-client.ts'
+
+'python':
+  - 'code-executor/**/*.py'
+  - 'code-executor/lib/mcp_client.py'
+
+'templates':
+  - 'code-executor/templates/**'
+
+'scripts':
+  - 'code-executor/scripts/**'
+
+'core':
+  - 'code-executor/SKILL.md'
+  - 'code-executor/lib/**'
+
+'ci/cd':
+  - '.github/workflows/**'
+  - '.github/**/*.yml'
+
+'testing':
+  - 'TESTING.md'
+  - '**/*test*'

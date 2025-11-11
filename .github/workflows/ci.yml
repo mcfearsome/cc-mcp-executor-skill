@@ -1,0 +1,169 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-typescript:
+    name: Lint TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Lint TypeScript files
+        run: |
+          deno lint code-executor/lib/mcp-client.ts
+          deno lint code-executor/scripts/typescript/*.ts
+          deno lint code-executor/templates/*.template.ts
+
+      - name: Format check TypeScript
+        run: |
+          deno fmt --check code-executor/lib/
+          deno fmt --check code-executor/scripts/typescript/
+          deno fmt --check code-executor/templates/
+
+  lint-python:
+    name: Lint Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+
+      - name: Install linting tools
+        run: |
+          pip install black ruff mypy
+
+      - name: Black format check
+        run: |
+          black --check code-executor/lib/mcp_client.py
+          black --check code-executor/scripts/python/*.py
+
+      - name: Ruff lint
+        run: |
+          ruff check code-executor/lib/
+          ruff check code-executor/scripts/python/
+
+      - name: MyPy type check
+        run: |
+          mypy code-executor/lib/mcp_client.py --ignore-missing-imports
+
+  test-imports:
+    name: Test Script Imports
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+
+      - name: Test TypeScript imports (no execution)
+        run: |
+          for script in code-executor/scripts/typescript/*.ts; do
+            echo "Checking $script..."
+            deno check "$script"
+          done
+
+      - name: Test Python imports (no execution)
+        run: |
+          for script in code-executor/scripts/python/*.py; do
+            echo "Checking $script..."
+            python -m py_compile "$script"
+          done
+
+  validate-docs:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for broken links in markdown
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          config-file: '.github/markdown-link-check-config.json'
+
+      - name: Validate YAML frontmatter in SKILL.md
+        run: |
+          head -n 5 code-executor/SKILL.md | grep -q "^---$" || exit 1
+          head -n 5 code-executor/SKILL.md | grep -q "name: code-executor" || exit 1
+          head -n 5 code-executor/SKILL.md | grep -q "description:" || exit 1
+
+      - name: Check all scripts referenced in docs exist
+        run: |
+          grep -o 'scripts/typescript/[a-z-]*.ts' README.md code-executor/SKILL.md | while read path; do
+            if [ ! -f "code-executor/$path" ]; then
+              echo "Missing: $path"
+              exit 1
+            fi
+          done
+
+  test-mcp-client:
+    name: Test MCP Client Libraries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+
+      - name: Install MCP filesystem server
+        run: npm install -g @modelcontextprotocol/server-filesystem
+
+      - name: Create test MCP config
+        run: |
+          mkdir -p /tmp/test-data
+          echo '{"test": "data"}' > /tmp/test-data/test.json
+          cat > /tmp/mcp-config.json << 'EOF'
+          {
+            "mcpServers": {
+              "filesystem": {
+                "command": "npx",
+                "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+              }
+            }
+          }
+          EOF
+
+      - name: Test TypeScript MCP client
+        run: |
+          cat > /tmp/test-ts.ts << 'EOF'
+          import { callMCPTool } from './code-executor/lib/mcp-client.ts';
+          const result = await callMCPTool('mcp__filesystem__readFile', {
+            path: '/tmp/test-data/test.json'
+          });
+          console.log('Success:', result);
+          EOF
+
+          MCP_CONFIG_PATH=/tmp/mcp-config.json \
+            deno run --allow-read --allow-run --allow-env /tmp/test-ts.ts
+
+      - name: Test Python MCP client
+        run: |
+          cat > /tmp/test_py.py << 'EOF'
+          import sys, os, asyncio
+          sys.path.insert(0, 'code-executor')
+          from lib.mcp_client import call_mcp_tool
+
+          async def main():
+              result = await call_mcp_tool('mcp__filesystem__readFile', {
+                  'path': '/tmp/test-data/test.json'
+              })
+              print('Success:', result)
+
+          asyncio.run(main())
+          EOF
+
+          MCP_CONFIG_PATH=/tmp/mcp-config.json python /tmp/test_py.py

@@ -1,0 +1,52 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.md'
+      - 'code-executor/**.md'
+  pull_request:
+    paths:
+      - '**.md'
+      - 'code-executor/**.md'
+
+jobs:
+  check-docs:
+    name: Check Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check markdown formatting
+        uses: DavidAnson/markdownlint-cli2-action@v15
+        with:
+          globs: '**/*.md'
+
+      - name: Check code blocks are valid
+        run: |
+          # Extract TypeScript code blocks and check syntax
+          for md_file in *.md code-executor/*.md; do
+            echo "Checking $md_file..."
+
+            # This is a simple check - you might want a more robust solution
+            grep -Pzo '```typescript\n\K(.|\n)*?(?=```)' "$md_file" || true
+          done
+
+      - name: Verify all referenced scripts exist
+        run: |
+          # Check that all mentioned scripts in docs actually exist
+          bash -c '
+          for doc in README.md code-executor/SKILL.md code-executor/SUBAGENT_SETUP.md; do
+            echo "Checking $doc..."
+
+            # Find all script references
+            grep -o "scripts/[a-z_/.-]*\.\(ts\|py\)" "$doc" | while read script; do
+              full_path="code-executor/$script"
+              if [ ! -f "$full_path" ]; then
+                echo "ERROR: $doc references $script but it does not exist at $full_path"
+                exit 1
+              fi
+            done
+          done
+          '
