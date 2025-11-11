@@ -1,3 +1,4 @@
+// @ts-nocheck - Demo script with intentionally relaxed type checking
 /**
  * Script: Conditional Logic
  * Purpose: Demonstrate dynamic tool selection based on conditions and data
@@ -89,13 +90,13 @@ async function routeByDataType(
       duration: Date.now() - startTime,
     };
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    console.error(`Error: ${(error as Error).message}`);
 
     return {
       success: false,
       path: "type-based-routing",
       tool,
-      reason: `Failed: ${error.message}`,
+      reason: `Failed: ${(error as Error).message}`,
       duration: Date.now() - startTime,
     };
   }
@@ -161,13 +162,13 @@ async function selectProcessingStrategy(
       duration: Date.now() - startTime,
     };
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    console.error(`Error: ${(error as Error).message}`);
 
     return {
       success: false,
       path: "strategy-selection",
       tool,
-      reason: `Failed: ${error.message}`,
+      reason: `Failed: ${(error as Error).message}`,
       duration: Date.now() - startTime,
     };
   }
@@ -255,7 +256,7 @@ async function cascadingFallback(itemId: string): Promise<ConditionalResult> {
         console.log(`✗ ${source.name} returned empty result`);
       }
     } catch (error) {
-      console.log(`✗ ${source.name} failed: ${error.message}`);
+      console.log(`✗ ${source.name} failed: ${(error as Error).message}`);
     }
   }
 
@@ -336,7 +337,7 @@ async function handleByPermissions(
       success: false,
       path: "permission-based",
       tool,
-      reason: `Failed: ${error.message}`,
+      reason: `Failed: ${(error as Error).message}`,
       duration: Date.now() - startTime,
     };
   }

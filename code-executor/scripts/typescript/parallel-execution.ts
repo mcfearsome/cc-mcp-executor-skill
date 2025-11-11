@@ -106,13 +106,15 @@ async function parallelExecution(): Promise<ParallelResult> {
         console.error(
           `✗ [${
             index + 1
-          }/${operations.length}] ${op.name} failed (${duration}ms): ${error.message}`,
+          }/${operations.length}] ${op.name} failed (${duration}ms): ${
+            (error as Error).message
+          }`,
         );
 
         return {
           name: op.name,
           success: false,
-          error: error.message,
+          error: (error as Error).message,
           duration,
         };
       }
@@ -142,8 +144,8 @@ async function parallelExecution(): Promise<ParallelResult> {
   const totalDuration = Date.now() - startTime;
 
   // Calculate estimated sequential time (sum of individual durations)
-  const estimatedSequentialTime = successfulResults.reduce(
-    (sum, r) => sum + ((r as { duration?: number }).duration || 0),
+  const estimatedSequentialTime: number = successfulResults.reduce(
+    (sum: number, r) => sum + ((r as { duration?: number }).duration || 0),
     0,
   );
   const speedup = estimatedSequentialTime > 0
@@ -195,7 +197,7 @@ async function parallelExecutionFailFast() {
       data: { users, orders, products, analytics, config }
     };
   } catch (error) {
-    console.error('At least one operation failed:', error.message);
+    console.error('At least one operation failed:', (error as Error).message);
     // If any operation fails, all results are lost
     throw error;
   }

@@ -39,16 +39,16 @@ async function multiToolWorkflow(): Promise<PipelineResult> {
 
     // Step 1: Fetch data from source
     console.log("[Step 1/5] Fetching data from source...");
-    const rawData = await callMCPTool("mcp__database__query", {
+    const rawData = (await callMCPTool("mcp__database__query", {
       table: "source_data",
       limit: 100,
-    });
+    })) as Record<string, unknown>[];
     stepsCompleted++;
     console.log(`✓ Fetched ${rawData.length} records`);
 
     // Step 2: Transform data
     console.log("[Step 2/5] Transforming data...");
-    const transformed = (rawData as Record<string, unknown>[]).map((
+    const transformed = rawData.map((
       record,
     ) => ({
       id: record.id,
@@ -77,10 +77,10 @@ async function multiToolWorkflow(): Promise<PipelineResult> {
 
     // Step 4: Store processed data
     console.log("[Step 4/5] Storing processed data...");
-    const storeResult = await callMCPTool("mcp__database__bulkInsert", {
+    const storeResult = (await callMCPTool("mcp__database__bulkInsert", {
       table: "processed_data",
       records: validated,
-    });
+    })) as { inserted: number };
     stepsCompleted++;
     console.log(`✓ Stored ${storeResult.inserted} records`);
 
@@ -118,13 +118,13 @@ async function multiToolWorkflow(): Promise<PipelineResult> {
     console.error(
       `✗ Workflow failed at step ${stepsCompleted + 1}/${totalSteps}`,
     );
-    console.error("Error:", error.message);
+    console.error("Error:", (error as Error).message);
 
     return {
       success: false,
       stepsCompleted,
       totalSteps,
-      error: error.message,
+      error: (error as Error).message,
       duration: Date.now() - startTime,
     };
   }

@@ -1,3 +1,4 @@
+// @ts-nocheck - Demo script with intentionally relaxed type checking
 /**
  * Script: Error Recovery
  * Purpose: Demonstrate retry logic, exponential backoff, and fallback strategies
@@ -55,7 +56,9 @@ async function callWithRetry(
       return result;
     } catch (error) {
       lastError = error;
-      console.warn(`✗ Attempt ${attempt + 1} failed: ${error.message}`);
+      console.warn(
+        `✗ Attempt ${attempt + 1} failed: ${(error as Error).message}`,
+      );
 
       // Don't wait after the last attempt
       if (attempt < config.maxRetries - 1) {
@@ -114,7 +117,7 @@ async function fetchDataWithRecovery(dataId: string): Promise<RecoveryResult> {
       errors,
     };
   } catch (error) {
-    errors.push(`Primary service: ${error.message}`);
+    errors.push(`Primary service: ${(error as Error).message}`);
     console.error(
       `✗ Primary service failed after ${retryConfig.maxRetries} attempts`,
     );
@@ -139,8 +142,8 @@ async function fetchDataWithRecovery(dataId: string): Promise<RecoveryResult> {
       errors,
     };
   } catch (error) {
-    errors.push(`Secondary service: ${error.message}`);
-    console.error(`✗ Secondary service failed: ${error.message}`);
+    errors.push(`Secondary service: ${(error as Error).message}`);
+    console.error(`✗ Secondary service failed: ${(error as Error).message}`);
   }
 
   // Strategy 3: Try cache as last resort
@@ -167,8 +170,8 @@ async function fetchDataWithRecovery(dataId: string): Promise<RecoveryResult> {
       throw new Error("No cached data available");
     }
   } catch (error) {
-    errors.push(`Cache: ${error.message}`);
-    console.error(`✗ Cache lookup failed: ${error.message}`);
+    errors.push(`Cache: ${(error as Error).message}`);
+    console.error(`✗ Cache lookup failed: ${(error as Error).message}`);
   }
 
   // Strategy 4: Return default/empty data

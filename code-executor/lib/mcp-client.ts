@@ -69,8 +69,9 @@ async function getMCPServerConfig(
 
     return config.mcpServers[serverName];
   } catch (error) {
+    const err = error as Error;
     throw new Error(
-      `Failed to load MCP config from ${configPath}: ${error.message}`,
+      `Failed to load MCP config from ${configPath}: ${err.message}`,
     );
   }
 }
@@ -171,8 +172,9 @@ export async function callMCPTool(
     const result = await callMCPToolViaStdio(serverConfig, tool, parameters);
     return result;
   } catch (error) {
+    const err = error as Error;
     throw new Error(
-      `Failed to call MCP tool ${toolName}: ${error.message}`,
+      `Failed to call MCP tool ${toolName}: ${err.message}`,
     );
   }
 }
