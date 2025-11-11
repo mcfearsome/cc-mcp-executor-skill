@@ -17,6 +17,7 @@
  * deno run --allow-read --allow-run --allow-env your-script.ts
  */
 
+// deno-lint-ignore no-unused-vars
 import { callMCPTool, callMCPToolsParallel } from "../lib/mcp-client.ts";
 
 // TODO: Define your tool calls
@@ -54,11 +55,13 @@ try {
 
   // OPTION B: Parallel Execution (all at once)
   // Use when operations are independent
-  const results = await Promise.all(
-    tools.map((tool) => {
-      console.log(`Calling ${tool.name}...`);
-      return callMCPTool(tool.name, tool.params);
-    }),
+
+  // Using helper function for parallel execution
+  const results = await callMCPToolsParallel(
+    tools.map((tool) => ({
+      tool: tool.name,
+      parameters: tool.params,
+    })),
   );
 
   console.log("All tool calls completed");
