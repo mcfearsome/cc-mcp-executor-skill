@@ -586,28 +586,276 @@ A complementary skill that processes Claude Code session logs to automatically e
 - **Reduced Manual Work**: Automate script curation process
 - **Quality Feedback Loop**: Successful patterns get preserved and shared
 
+### Automation Triggers
+
+**Option 1: Session Close Hook (Recommended)**
+
+Claude Code supports hooks that can be triggered on various events. A session close hook would be ideal:
+
+```yaml
+# .claude/settings.yml or .claude/hooks.yml
+hooks:
+  session_end:
+    - name: extract-scripts
+      command: claude-skill script-extractor --session-log ~/.claude/session-logs/latest.json
+      description: Extract successful patterns from completed session
+      enabled: true
+      async: true  # Run in background, don't block session close
+```
+
+**Alternative: Project-specific hook**
+
+```yaml
+# .claude/hooks.yml (project directory)
+hooks:
+  session_end:
+    - name: extract-to-project-scripts
+      command: |
+        claude-skill script-extractor \
+          --session-log ~/.claude/session-logs/latest.json \
+          --output .claude/skills/code-executor/scripts/ \
+          --git-auto-commit
+      description: Extract patterns and commit to project repo
+      enabled: true
+```
+
+**Benefits:**
+- Runs automatically after each session
+- Captures context while fresh
+- No manual intervention needed
+- Can be enabled/disabled easily
+- Async execution doesn't slow down session close
+
+**Option 2: Cron Job**
+
+For users who prefer scheduled batch processing:
+
+```bash
+# Crontab entry - runs daily at midnight
+0 0 * * * cd ~/.claude && claude-skill script-extractor --batch --last-24h
+```
+
+**Benefits:**
+- Process multiple sessions at once
+- Run during off-hours
+- More control over timing
+- Lower interruption
+
+**Option 3: Manual Trigger**
+
+For full control, users can manually invoke:
+
+```bash
+claude-skill script-extractor --interactive
+```
+
+**Configuration Choice:**
+
+During skill setup, prompt the user:
+
+```
+Script Extractor Setup
+=====================
+How would you like to extract scripts from your sessions?
+
+1. Automatic (after each session) - Recommended
+2. Scheduled (cron job) - Specify frequency
+3. Manual (run when you choose)
+
+Choice [1-3]:
+```
+
+### Git Integration
+
+**User-Configurable Repository**
+
+Allow users to specify their own git repository for tracking extracted scripts:
+
+```yaml
+# .claude/skills/script-extractor/config.yml
+git:
+  enabled: true
+  repository: "git@github.com:username/my-mcp-scripts.git"
+  branch: "main"
+  auto_commit: true
+  auto_push: false  # User can enable for automatic backup
+  commit_message_template: "Add extracted script: {script_name} from session {session_id}"
+```
+
+**Workflow with Git:**
+
+1. **Initial Setup**:
+   ```bash
+   claude-skill script-extractor setup
+   # Prompts for git repo, creates config
+   ```
+
+2. **After Script Extraction**:
+   - Script saved to `~/.claude/skills/code-executor/scripts/`
+   - Git operations (if enabled):
+     - `git add` new script file
+     - `git commit` with descriptive message
+     - `git push` (if auto_push enabled)
+   - Provides git commit hash in output
+
+3. **Conflict Resolution**:
+   - If script name exists, prompt user:
+     - Overwrite
+     - Save as new version (e.g., `file-processing-v2.ts`)
+     - Skip
+
+4. **Benefits**:
+   - **Version Control**: Track evolution of patterns
+   - **Backup**: Scripts safely stored remotely
+   - **Sharing**: Easy to share repo with team
+   - **Rollback**: Revert if extraction was incorrect
+   - **History**: See when and why patterns were added
+
 ### Implementation Considerations
 
-- Privacy: Only process logs user explicitly shares
-- Quality gates: Require manual review before adding scripts
+**Privacy & Security:**
+- Only process logs user explicitly shares or enables via config
+- Option to exclude sensitive sessions (via session tags or manual skip)
+- Redact sensitive data (API keys, tokens) before saving scripts
+- User consent required for git operations
+
+**Quality Gates:**
+- Require manual review before committing (unless auto_approve enabled)
+- Syntax validation before saving
+- Deduplication check against existing scripts
+- Code quality assessment (complexity, error handling, documentation)
+
+**Configuration Options:**
+- Enable/disable per MCP server (only extract from certain tools)
+- Minimum complexity threshold (don't save trivial single-line calls)
+- Auto-approve for trusted patterns
+- Dry-run mode to preview before saving
+
+**Naming & Organization:**
+- Automatic categorization by MCP tools used
 - Naming conflicts: Smart deduplication and versioning
 - Pattern categorization: Automatically classify by use case
+- Maintain consistent naming conventions
 
 ### Skill Structure
 
 ```
 script-extractor/
-├── SKILL.md
-├── extraction-guide.md
-├── quality-criteria.md
-└── scripts/
-    ├── extract-from-logs.ts
-    └── format-and-integrate.ts
+├── SKILL.md                      # Main skill instructions
+├── config.template.yml           # Configuration template
+├── extraction-guide.md           # How extraction works
+├── quality-criteria.md           # Quality assessment rules
+├── git-integration.md            # Git workflow documentation
+├── scripts/
+│   ├── extract-from-logs.ts      # Log parsing and extraction
+│   ├── format-and-integrate.ts   # Formatting and integration
+│   ├── git-operations.ts         # Git commit/push automation
+│   ├── quality-checker.ts        # Code quality assessment
+│   └── setup-wizard.ts           # Interactive setup
+└── hooks/
+    └── session-end.sh            # Session close hook script
 ```
+
+### Setup Wizard Flow
+
+```
+Welcome to Script Extractor Setup!
+==================================
+
+Step 1: Choose trigger method
+  [1] Automatic (after each session) ✓ Recommended
+  [2] Scheduled (cron job)
+  [3] Manual only
+  Choice: 1
+
+Step 2: Git Integration
+  Enable git integration? [Y/n]: y
+  Git repository URL: git@github.com:username/my-mcp-scripts.git
+  Branch [main]: main
+  Auto-commit extracted scripts? [Y/n]: y
+  Auto-push to remote? [y/N]: n
+
+Step 3: Quality Settings
+  Require manual review before saving? [Y/n]: y
+  Minimum script complexity [medium]:
+  Exclude sensitive sessions? [Y/n]: y
+
+Step 4: Test Configuration
+  ✓ Git repository accessible
+  ✓ Session logs found
+  ✓ Hook installed successfully
+
+Setup complete! Script extractor is now active.
+```
+
+### Team Collaboration Features
+
+**Shared Repository Benefits:**
+
+When multiple team members configure the same git repository:
+
+1. **Pattern Library Growth**:
+   - Each team member's successful patterns contribute to shared library
+   - Best practices emerge organically across the team
+   - Reduces duplicate work
+
+2. **Code Review Workflow**:
+   - Extracted scripts can be reviewed via Pull Requests
+   - Team discusses and improves patterns before merging
+   - Quality maintained through collaboration
+
+3. **Onboarding**:
+   - New team members get battle-tested patterns immediately
+   - Learn team conventions through examples
+   - Faster productivity ramp-up
+
+4. **Organization-Wide Standards**:
+   - Common patterns become standardized
+   - MCP usage best practices documented through code
+   - Knowledge retention even as team members change
+
+**Example Team Setup:**
+
+```yaml
+# Team-wide config shared via company repo
+git:
+  repository: "git@github.com:company/mcp-patterns.git"
+  branch: "main"
+  auto_commit: true
+  auto_push: false  # PR workflow instead
+  require_pr: true
+  reviewers: ["@team-lead", "@senior-dev"]
+```
+
+### Future Development Path
+
+**Phase 1**: Core code-executor skill with hand-crafted scripts (Current)
+
+**Phase 2**: Script-extractor with basic extraction
+- Session log parsing
+- Manual review and approval
+- Local saving only
+
+**Phase 3**: Git integration
+- User-configurable repositories
+- Automated commits
+- Version control
+
+**Phase 4**: Team features
+- Shared repositories
+- Pull request workflow
+- Quality dashboards
+
+**Phase 5**: Advanced automation
+- AI-powered pattern recognition
+- Automatic categorization
+- Duplicate detection and merging
+- Pattern effectiveness metrics
 
 This would be developed after the main code-executor skill is stable and in use.
 
 ## Version History
 
+- **v1.2** (2025-11-11): Added automation triggers (hooks, cron), git integration, and team collaboration features to companion skill
 - **v1.1** (2025-11-11): Added cached scripts approach with templates and script library
 - **v1.0** (2025-11-11): Initial planning document
