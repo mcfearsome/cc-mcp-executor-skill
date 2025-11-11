@@ -97,8 +97,8 @@ Task({
      - Calls MCP tools using callMCPTool('mcp__server__tool', params)
      - Processes and transforms data as needed
      - Returns summary of results
-  3. Execute the code via Bash:
-     deno run --allow-read --allow-run --allow-env /tmp/script.ts
+  3. Execute the code via Bash with MCP_CONFIG_PATH set:
+     MCP_CONFIG_PATH=~/.claude/subagent-mcp.json deno run --allow-read --allow-run --allow-env /tmp/script.ts
   4. Return the execution results
 
   Use the pattern from: [specify cached script that matches]
@@ -190,9 +190,9 @@ Task({
      - Example: callMCPTool('mcp__filesystem__readFile', { path: '/data/file.json' })
 
   4. **Execute Code**
-     Run via Bash:
+     Run via Bash with MCP_CONFIG_PATH set:
      \`\`\`bash
-     deno run --allow-read --allow-run --allow-env /tmp/your-script.ts
+     MCP_CONFIG_PATH=~/.claude/subagent-mcp.json deno run --allow-read --allow-run --allow-env /tmp/your-script.ts
      \`\`\`
 
   5. **Return Results**
@@ -253,7 +253,7 @@ Task({
      import { callMCPTool } from '../../lib/mcp-client.ts';
 
   4. Execute via:
-     deno run --allow-read --allow-run --allow-env /tmp/aggregate-files.ts
+     MCP_CONFIG_PATH=~/.claude/subagent-mcp.json deno run --allow-read --allow-run --allow-env /tmp/aggregate-files.ts
 
   5. Return: Number of files processed and records stored
 
@@ -413,8 +413,10 @@ try {
    - Explain how to adapt it for the current task
 
 3. **Specify execution command**
+   - CRITICAL: Set `MCP_CONFIG_PATH=~/.claude/subagent-mcp.json` before command
    - Include the full `deno run` or `python` command
    - Include required permissions: `--allow-read --allow-run --allow-env`
+   - Example: `MCP_CONFIG_PATH=~/.claude/subagent-mcp.json deno run --allow-read --allow-run --allow-env script.ts`
 
 4. **Define expected output clearly**
    - What data you need back
@@ -464,16 +466,21 @@ If subagent task fails:
    - Correct format: `mcp__server__tool`
    - Match to actual server name in config
 
-3. **Check permissions**
+3. **Check MCP_CONFIG_PATH is set**
+   - CRITICAL: Bash execution must set `MCP_CONFIG_PATH=~/.claude/subagent-mcp.json`
+   - Without this, MCP client won't find server configuration
+   - Verify config file exists: `ls -la ~/.claude/subagent-mcp.json`
+
+4. **Check permissions**
    - Deno needs: `--allow-read --allow-run --allow-env`
    - MCP servers may have restricted access
 
-4. **Review generated code**
+5. **Review generated code**
    - Did subagent import MCP client correctly?
    - Are tool names formatted properly?
    - Is error handling present?
 
-5. **Check execution output**
+6. **Check execution output**
    - Look at stdout/stderr from Bash execution
    - MCP errors appear in output
 

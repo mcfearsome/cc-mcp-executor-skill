@@ -103,41 +103,32 @@ Create `.claude/subagent-mcp.json` in your project:
 }
 ```
 
-### Step 3: Configure MCP Client Library
+### Step 3: Understand MCP Client Configuration
 
 The MCP client library (`lib/mcp-client.ts` and `lib/mcp_client.py`) reads MCP configuration from:
 
 1. `MCP_CONFIG_PATH` environment variable (if set)
 2. `~/.mcp.json` (default fallback)
 
-To use the subagent configuration:
+**CRITICAL: Do NOT symlink or copy subagent-mcp.json to ~/.mcp.json**
 
-**Option A: Set environment variable**
+Why? If you symlink `~/.claude/subagent-mcp.json` to `~/.mcp.json`, then **main Claude Code will load all MCP servers**, defeating the entire purpose of this architecture (98% token reduction).
 
-```bash
-export MCP_CONFIG_PATH=~/.claude/subagent-mcp.json
-```
+**Correct approach:**
 
-Or in the code execution:
+The subagent will set `MCP_CONFIG_PATH` in the Bash execution command:
 
 ```bash
 MCP_CONFIG_PATH=~/.claude/subagent-mcp.json deno run --allow-read --allow-run --allow-env script.ts
 ```
 
-**Option B: Create symlink**
+This way:
+- ✅ Main Claude Code has NO MCP servers (no `~/.mcp.json` or empty)
+- ✅ Subagent execution sets `MCP_CONFIG_PATH` temporarily
+- ✅ MCP client reads from subagent config only during execution
+- ✅ Token overhead stays in subagent context only
 
-```bash
-ln -s ~/.claude/subagent-mcp.json ~/.mcp.json
-```
-
-**Option C: Modify the MCP client** (if you need different paths)
-
-Edit `code-executor/lib/mcp-client.ts` line:
-
-```typescript
-const configPath = Deno.env.get('MCP_CONFIG_PATH') ||
-                   Deno.env.get('HOME') + '/.claude/subagent-mcp.json';  // Update path
-```
+**No action needed in this step** - just understand the pattern. The subagent will handle setting `MCP_CONFIG_PATH` when it executes code.
 
 ### Step 4: Install the Skill
 
@@ -268,7 +259,7 @@ console.log(`Processed ${jsonFiles.length} files, ${aggregated.total_records} re
 4. Executes code via Bash:
 
 ```bash
-deno run --allow-read --allow-run --allow-env /tmp/generated-script.ts
+MCP_CONFIG_PATH=~/.claude/subagent-mcp.json deno run --allow-read --allow-run --allow-env /tmp/generated-script.ts
 ```
 
 5. Returns results to main Claude Code
@@ -390,10 +381,10 @@ Set `MCP_CONFIG_PATH` if using custom location.
 
 2. Check server logs (usually in stderr)
 
-3. Verify Deno/Python has required permissions:
+3. Verify Deno/Python has required permissions and MCP_CONFIG_PATH:
    ```bash
-   deno run --allow-read --allow-run --allow-env script.ts
-   python script.py
+   MCP_CONFIG_PATH=~/.claude/subagent-mcp.json deno run --allow-read --allow-run --allow-env script.ts
+   MCP_CONFIG_PATH=~/.claude/subagent-mcp.json python script.py
    ```
 
 ### Issue: Subagent doesn't have code-executor skill

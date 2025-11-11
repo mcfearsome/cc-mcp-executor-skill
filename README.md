@@ -111,24 +111,29 @@ Create `~/.claude/subagent-mcp.json` (or project-specific `.claude/subagent-mcp.
 }
 ```
 
-### Step 3: Configure MCP Client
+### Step 3: Understand MCP Client Configuration
 
 The MCP client library reads configuration from `~/.mcp.json` or `MCP_CONFIG_PATH` env var.
 
-**Option A: Symlink**
+**CRITICAL: Do NOT symlink or globally export MCP_CONFIG_PATH**
+
+Why? If you symlink `~/.claude/subagent-mcp.json` to `~/.mcp.json`, or globally export `MCP_CONFIG_PATH`, then **main Claude Code will load all MCP servers**, defeating the entire purpose (98% token reduction).
+
+**Correct approach:**
+
+The subagent sets `MCP_CONFIG_PATH` temporarily in the Bash execution command:
+
 ```bash
-ln -s ~/.claude/subagent-mcp.json ~/.mcp.json
+MCP_CONFIG_PATH=~/.claude/subagent-mcp.json deno run --allow-read --allow-run --allow-env script.ts
 ```
 
-**Option B: Environment Variable**
-```bash
-export MCP_CONFIG_PATH=~/.claude/subagent-mcp.json
-```
+This way:
+- ✅ Main Claude Code has NO MCP servers loaded (keeps context clean)
+- ✅ Subagent execution sets `MCP_CONFIG_PATH` temporarily
+- ✅ MCP client reads from subagent config only during code execution
+- ✅ Token overhead isolated to subagent context
 
-Add to your shell profile (`~/.bashrc`, `~/.zshrc`):
-```bash
-echo 'export MCP_CONFIG_PATH=~/.claude/subagent-mcp.json' >> ~/.bashrc
-```
+**No action needed in this step** - the subagent handles setting `MCP_CONFIG_PATH` automatically when executing code.
 
 ### Step 4: Verify Installation
 
@@ -364,10 +369,14 @@ The `<server>` name comes from your subagent MCP configuration.
 
 **Problem**: "MCP config file not found: ~/.mcp.json"
 
+**Cause**: Subagent execution command didn't set `MCP_CONFIG_PATH`
+
 **Solutions**:
-1. Create symlink: `ln -s ~/.claude/subagent-mcp.json ~/.mcp.json`
-2. Or set env var: `export MCP_CONFIG_PATH=~/.claude/subagent-mcp.json`
-3. Check file exists: `ls -la ~/.claude/subagent-mcp.json`
+1. Verify subagent Bash command includes: `MCP_CONFIG_PATH=~/.claude/subagent-mcp.json`
+2. Check config file exists: `ls -la ~/.claude/subagent-mcp.json`
+3. Review SKILL.md to ensure execution examples include MCP_CONFIG_PATH
+
+**DO NOT**: Symlink or globally export MCP_CONFIG_PATH (this defeats the architecture)
 
 ### Permission Denied
 
