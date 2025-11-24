@@ -11,7 +11,7 @@ jobs:
     name: Lint TypeScript
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v1.x
@@ -32,7 +32,7 @@ jobs:
     name: Lint Python
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: '3.8'
@@ -63,7 +63,7 @@ jobs:
     name: Test Script Imports
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v1.x
@@ -95,7 +95,7 @@ jobs:
     name: Validate Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Check for broken links in markdown
         uses: gaurav-nelson/github-action-markdown-link-check@v1
@@ -137,7 +137,7 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true  # MCP server setup may fail in CI
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v1.x
